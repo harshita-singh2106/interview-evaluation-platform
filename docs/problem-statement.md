@@ -11,3 +11,11 @@ This project aims to develop a web-based interview evaluation platform that cond
 3. To evaluate candidate answers using keyword and semantic analysis techniques.  
 4. To provide clear feedback highlighting strengths and improvement areas.  
 5. To track interview performance and progress over multiple attempts.
+
+## Tech Stack
+Frontend: React.js
+Backend: Node.js / Flask
+Database: MongoDB / PostgreSQL
+
+## Project Status
+Currently under development.
