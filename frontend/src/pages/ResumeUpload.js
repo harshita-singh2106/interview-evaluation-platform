@@ -1,13 +1,15 @@
 import { useState } from "react";
+import axios from "axios";
 
 function ResumeUpload() {
   const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!file) {
@@ -15,12 +17,32 @@ function ResumeUpload() {
       return;
     }
 
-    alert(`Resume "${file.name}" uploaded successfully!`);
+    const formData = new FormData();
+    formData.append("resume", file);
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(
+        "http://localhost:5000/upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      alert(res.data.message);
+      setFile(null);
+
+    } catch (error) {
+      alert("Upload failed. Backend not responding.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div style={{ padding: "20px" }}>
-      <h2>Upload Resume</h2>
+      <h2>UploadResume Upload</h2>
 
       <form onSubmit={handleSubmit}>
         <input
@@ -33,7 +55,9 @@ function ResumeUpload() {
 
         {file && <p>Selected file: <b>{file.name}</b></p>}
 
-        <button type="submit">Upload</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Uploading..." : "Upload Resume"}
+        </button>
       </form>
     </div>
   );
