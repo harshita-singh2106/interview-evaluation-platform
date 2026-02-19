@@ -1,38 +1,56 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+const fs = require("fs");
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Multer config (resume upload)
-const upload = multer({
-  dest: "uploads/",
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB limit
-});
+// File upload config
+const upload = multer({ dest: "uploads/" });
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("Backend is running");
-});
+app.post("/upload", upload.single("resume"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
-// Resume upload route
-app.post("/upload", upload.single("resume"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No file uploaded" });
+    const dataBuffer = fs.readFileSync(req.file.path);
+    const data = await pdfParse(dataBuffer);
+
+    const resumeText = data.text.toLowerCase();
+
+    const skillsList = [
+      "python",
+      "java",
+      "react",
+      "node",
+      "mongodb",
+      "sql",
+      "machine learning",
+      "html",
+      "css",
+      "javascript"
+    ];
+
+    const detectedSkills = skillsList.filter(skill =>
+      resumeText.includes(skill)
+    );
+
+    res.json({
+      message: "Resume uploaded successfully",
+      extractedText: resumeText.substring(0, 1000),
+      skills: detectedSkills
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error parsing resume" });
   }
-
-  res.json({
-    message: `Resume "${req.file.originalname}" uploaded successfully`,
-    fileName: req.file.filename,
-  });
 });
 
-// Server start
-const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
+app.listen(5000, () => {
+  console.log("Backend running on port 5000");
 });

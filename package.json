@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.0.2",
+    "pdf-parse": "^2.4.5",
     "react-router-dom": "^7.13.0",
     "react-scripts": "^5.0.1"
   }
