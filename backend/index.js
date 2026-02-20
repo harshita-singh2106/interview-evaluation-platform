@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+const pdfParse = require("pdf-parse");
 const fs = require("fs");
 
 const app = express();
@@ -39,10 +39,20 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
       resumeText.includes(skill)
     );
 
+    const score = Math.round(
+      (detectedSkills.length / skillsList.length) * 100
+    );
+
+    const missingSkills = skillsList.filter(
+      skill => !detectedSkills.includes(skill)
+   );
+
     res.json({
       message: "Resume uploaded successfully",
       extractedText: resumeText.substring(0, 1000),
-      skills: detectedSkills
+      skills: detectedSkills,
+      score: score,
+      missingSkills: missingSkills
     });
 
   } catch (error) {
