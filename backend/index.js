@@ -107,6 +107,50 @@ app.delete("/resumes/:id", async (req, res) => {
   }
 });
 
+// Search resumes by skill
+app.get("/search", async (req, res) => {
+  try {
+    const skill = req.query.skill;
+
+    const resumes = await Resume.find({
+      skills: { $regex: skill, $options: "i" }
+    });
+
+    res.json(resumes);
+  } catch (error) {
+    res.status(500).json({ message: "Search error" });
+  }
+});
+
+// Get top candidates
+app.get("/top-candidates", async (req, res) => {
+  try {
+    const resumes = await Resume
+      .find()
+      .sort({ score: -1 })   // highest score first
+      .limit(5);             // top 5 candidates
+
+    res.json(resumes);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching candidates" });
+  }
+});
+
+// SEARCH RESUME BY SKILL
+app.get("/search", async (req, res) => {
+  try {
+    const skill = req.query.skill;
+
+    const results = await Resume.find({
+      skills: { $regex: skill, $options: "i" }
+    });
+
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ message: "Search error" });
+  }
+});
+
 app.listen(5000, () => {
   console.log("Backend running on port 5000");
 });
