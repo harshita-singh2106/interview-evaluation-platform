@@ -151,6 +151,19 @@ app.get("/search", async (req, res) => {
   }
 });
 
+// ⭐ Get Top Candidates
+app.get("/top-candidates", async (req, res) => {
+  try {
+    const candidates = await Resume.find()
+      .sort({ score: -1 })   // highest score first
+      .limit(5);             // show top 5
+
+    res.json(candidates);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching candidates" });
+  }
+});
+
 app.listen(5000, () => {
   console.log("Backend running on port 5000");
 });
