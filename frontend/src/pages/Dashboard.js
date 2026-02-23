@@ -1,9 +1,22 @@
 import React, { useEffect, useState } from "react";
 
+import {
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  Button,
+  TextField,
+  Box,
+  Stack,
+  Chip
+} from "@mui/material";
+
 export default function Dashboard() {
 
   const [search, setSearch] = useState("");
   const [resumes, setResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [topCandidates, setTopCandidates] = useState([]);
 
   const [analytics, setAnalytics] = useState({
@@ -12,11 +25,14 @@ export default function Dashboard() {
     best: 0,
   });
 
-  // ✅ Fetch Resumes + Analytics
+  // ✅ Fetch resumes + analytics
   const fetchResumes = () => {
+
+    setLoading(true);
+
     fetch("http://localhost:5000/resumes")
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
 
         setResumes(data);
 
@@ -32,21 +48,22 @@ export default function Dashboard() {
         const best =
           total === 0
             ? 0
-            : Math.max(...data.map((r) => r.score));
+            : Math.max(...data.map(r => r.score));
 
         setAnalytics({ total, average, best });
-      })
-      .catch((err) => console.error(err));
+
+        setLoading(false);
+      });
   };
 
   // ✅ Fetch Top Candidates
   const fetchTopCandidates = () => {
     fetch("http://localhost:5000/top-candidates")
-      .then((res) => res.json())
-      .then((data) => setTopCandidates(data));
+      .then(res => res.json())
+      .then(data => setTopCandidates(data));
   };
 
-  // ✅ Auto Refresh Dashboard
+  // ✅ Auto refresh
   useEffect(() => {
 
     if (search !== "") return;
@@ -65,21 +82,16 @@ export default function Dashboard() {
 
   // ✅ Delete Resume
   const handleDelete = async (id) => {
-    try {
-      await fetch(`http://localhost:5000/resumes/${id}`, {
-        method: "DELETE",
-      });
+    await fetch(`http://localhost:5000/resumes/${id}`, {
+      method: "DELETE",
+    });
 
-      setResumes((prev) =>
-        prev.filter((resume) => resume._id !== id)
-      );
-
-    } catch (error) {
-      console.error(error);
-    }
+    setResumes(prev =>
+      prev.filter(resume => resume._id !== id)
+    );
   };
 
-  // ✅ Search Resume
+  // ✅ Search
   const handleSearch = async () => {
 
     if (!search.trim()) return;
@@ -92,7 +104,7 @@ export default function Dashboard() {
     setResumes(data);
   };
 
-  // ✅ Reset Dashboard
+  // ✅ Reset
   const handleReset = () => {
     setSearch("");
     fetchResumes();
@@ -100,91 +112,123 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "25px", background:"#f4f6f8", minHeight:"100vh" }}>
 
-      {/* Analytics */}
-      <h2>📊 Dashboard Analytics</h2>
+      {/* Analytics Cards */}
+      <Grid container spacing={3} mb={3}>
 
-<div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-  <div>👥 Total Candidates: {analytics.total}</div>
-  <div>⭐ Average Score: {analytics.average}%</div>
-  <div>🏆 Best Score: {analytics.best}%</div>
-</div>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">Total Resumes</Typography>
+              <Typography variant="h4">{analytics.total}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">Average Score</Typography>
+              <Typography variant="h4">{analytics.average}%</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">Best Candidate</Typography>
+              <Typography variant="h4">{analytics.best}%</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+      </Grid>
 
       {/* Top Candidates */}
-      <h2>⭐ Top Candidates</h2>
+      <Typography variant="h5" mb={2}>
+        ⭐ Top Candidates
+      </Typography>
 
-      {topCandidates.map((candidate) => (
-        <div key={candidate._id}
-          style={{
-            border: "2px solid green",
-            padding: "10px",
-            marginBottom: "10px"
-          }}>
-          <p><b>Score:</b> {candidate.score}%</p>
-          <p><b>Skills:</b> {candidate.skills.join(", ")}</p>
-        </div>
+      {topCandidates.map(candidate => (
+        <Card key={candidate._id} sx={{ mb:2 }}>
+          <CardContent>
+            <Typography>
+              Score: {candidate.score}%
+            </Typography>
+            <Typography>
+              Skills: {candidate.skills.join(", ")}
+            </Typography>
+          </CardContent>
+        </Card>
       ))}
 
-      <h2>All Uploaded Resumes</h2>
-
       {/* Search */}
-      <input
-        type="text"
-        placeholder="Search by skill..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        style={{ padding: "8px", marginRight: "10px" }}
-      />
+      <Typography variant="h5" mt={4} mb={2}>
+        All Uploaded Resumes
+      </Typography>
 
-      <button onClick={handleSearch}>Search</button>
+      <Box display="flex" gap={2} mb={3}>
+        <TextField
+          label="Search Candidate Skill"
+          value={search}
+          onChange={(e)=>setSearch(e.target.value)}
+          onKeyDown={(e)=> e.key==="Enter" && handleSearch()}
+          fullWidth
+        />
 
-      <button onClick={handleReset} style={{ marginLeft: "10px" }}>
-        Reset
-      </button>
+        <Button variant="contained" onClick={handleSearch}>
+          Search
+        </Button>
 
-      {/* Resume List */}
-      {resumes.length === 0 ? (
-        <p>No resumes found.</p>
+        <Button variant="outlined" onClick={handleReset}>
+          Reset
+        </Button>
+      </Box>
+
+      {/* Resume Cards */}
+      {loading ? (
+        <Typography variant="h6">
+          Loading candidates...
+        </Typography>
       ) : (
-        resumes.map((resume) => (
-          <div key={resume._id}
-            style={{
-              border: "1px solid #ccc",
-              padding: "15px",
-              marginTop: "15px",
-            }}>
-            <p><b>Score:</b> {resume.score}%</p>
+        resumes.map(resume => (
+          <Card key={resume._id} sx={{ mb:3, borderRadius:3 }}>
+            <CardContent>
 
-            <p><b>Skills:</b></p>
-            <ul>
-              {resume.skills.map((skill, index) => (
-                <li key={index}>{skill}</li>
-              ))}
-            </ul>
+              <Typography variant="h6" fontWeight="bold">
+                Resume Score: {resume.score}%
+              </Typography>
 
-            <small>
-              Uploaded on:{" "}
-              {new Date(resume.createdAt).toLocaleString()}
-            </small>
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Uploaded on:
+                {" "}
+                {new Date(resume.createdAt).toLocaleString()}
+              </Typography>
 
-            <br />
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                {resume.skills.map((skill,index)=>(
+                  <Chip
+                    key={index}
+                    label={skill}
+                    color="primary"
+                    variant="outlined"
+                  />
+                ))}
+              </Stack>
 
-            <button
-              style={{
-                marginTop: "10px",
-                background: "red",
-                color: "white",
-                border: "none",
-                padding: "6px 12px",
-                cursor: "pointer",
-              }}
-              onClick={() => handleDelete(resume._id)}
-            >
-              Delete
-            </button>
-          </div>
+              <Button
+                color="error"
+                variant="contained"
+                sx={{ mt:2 }}
+                onClick={()=>handleDelete(resume._id)}
+              >
+                Delete
+              </Button>
+
+            </CardContent>
+          </Card>
         ))
       )}
 
