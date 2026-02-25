@@ -74,7 +74,7 @@ export default function Dashboard() {
     const interval = setInterval(() => {
       fetchResumes();
       fetchTopCandidates();
-    }, 3000);
+    }, 10000);
 
     return () => clearInterval(interval);
 
@@ -90,6 +90,18 @@ export default function Dashboard() {
       prev.filter(resume => resume._id !== id)
     );
   };
+
+  const updateStatus = async (id, status) => {
+  await fetch(`http://localhost:5000/resumes/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  fetchResumes(); // refresh dashboard
+};
 
   // ✅ Search
   const handleSearch = async () => {
@@ -197,6 +209,11 @@ export default function Dashboard() {
           <Card key={resume._id} sx={{ mb:3, borderRadius:3 }}>
             <CardContent>
 
+              <Typography>
+                Status: <b>{resume.status || "Pending"}
+              </b>
+              </Typography>
+
               <Typography variant="h6" fontWeight="bold">
                 Resume Score: {resume.score}%
               </Typography>
@@ -226,6 +243,24 @@ export default function Dashboard() {
               >
                 Delete
               </Button>
+
+              <Button
+  variant="contained"
+  color="success"
+  sx={{ mt: 2, ml: 1 }}
+  onClick={() => updateStatus(resume._id, "Shortlisted")}
+>
+  Shortlist
+</Button>
+
+<Button
+  variant="contained"
+  color="warning"
+  sx={{ mt: 2, ml: 1 }}
+  onClick={() => updateStatus(resume._id, "Rejected")}
+>
+  Reject
+</Button>
 
             </CardContent>
           </Card>

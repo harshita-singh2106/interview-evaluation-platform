@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
+const Resume = require("./models/Resume");
 const pdfParse = require("pdf-parse");
 const mongoose = require("mongoose");
 const fs = require("fs");
@@ -28,7 +29,7 @@ const resumeSchema = new mongoose.Schema({
   }
 });
 
-const Resume = mongoose.model("Resume", resumeSchema);
+// const Resume = mongoose.model("Resume", resumeSchema);
 
 // File upload config
 const upload = multer({ dest: "uploads/" });
@@ -161,6 +162,22 @@ app.get("/top-candidates", async (req, res) => {
     res.json(candidates);
   } catch (error) {
     res.status(500).json({ message: "Error fetching candidates" });
+  }
+});
+
+app.put("/resumes/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const updated = await Resume.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Status update failed" });
   }
 });
 
