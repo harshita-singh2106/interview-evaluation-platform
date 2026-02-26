@@ -181,6 +181,22 @@ app.put("/resumes/:id/status", async (req, res) => {
   }
 });
 
+app.put("/resumes/status/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const updated = await Resume.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ message: "Status update failed" });
+  }
+});
+
 app.listen(5000, () => {
   console.log("Backend running on port 5000");
 });

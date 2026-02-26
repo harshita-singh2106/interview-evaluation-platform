@@ -15,6 +15,7 @@ import {
 export default function Dashboard() {
 
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [topCandidates, setTopCandidates] = useState([]);
@@ -25,7 +26,7 @@ export default function Dashboard() {
     best: 0,
   });
 
-  // ✅ Fetch resumes + analytics
+  // ✅ Fetch Resumes + Analytics
   const fetchResumes = () => {
 
     setLoading(true);
@@ -63,7 +64,7 @@ export default function Dashboard() {
       .then(data => setTopCandidates(data));
   };
 
-  // ✅ Auto refresh
+  // ✅ Auto Refresh Dashboard
   useEffect(() => {
 
     if (search !== "") return;
@@ -91,17 +92,18 @@ export default function Dashboard() {
     );
   };
 
+  // ✅ Update Status
   const updateStatus = async (id, status) => {
-  await fetch(`http://localhost:5000/resumes/${id}/status`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status }),
-  });
+    await fetch(`http://localhost:5000/resumes/${id}/status`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
 
-  fetchResumes(); // refresh dashboard
-};
+    fetchResumes();
+  };
 
   // ✅ Search
   const handleSearch = async () => {
@@ -119,14 +121,15 @@ export default function Dashboard() {
   // ✅ Reset
   const handleReset = () => {
     setSearch("");
+    setFilter("All");
     fetchResumes();
     fetchTopCandidates();
   };
 
   return (
-    <div style={{ padding: "25px", background:"#f4f6f8", minHeight:"100vh" }}>
+    <div style={{ padding:"25px", background:"#f4f6f8", minHeight:"100vh" }}>
 
-      {/* Analytics Cards */}
+      {/* Analytics */}
       <Grid container spacing={3} mb={3}>
 
         <Grid item xs={12} md={4}>
@@ -166,9 +169,7 @@ export default function Dashboard() {
       {topCandidates.map(candidate => (
         <Card key={candidate._id} sx={{ mb:2 }}>
           <CardContent>
-            <Typography>
-              Score: {candidate.score}%
-            </Typography>
+            <Typography>Score: {candidate.score}%</Typography>
             <Typography>
               Skills: {candidate.skills.join(", ")}
             </Typography>
@@ -199,72 +200,116 @@ export default function Dashboard() {
         </Button>
       </Box>
 
+      {/* ✅ FILTER BUTTONS */}
+      <Box mb={3}>
+        <Typography variant="h6" mb={1}>
+          Filter Candidates
+        </Typography>
+
+        <Button variant="contained" onClick={()=>setFilter("All")}>
+          All
+        </Button>
+
+        <Button color="warning" sx={{ml:1}}
+          onClick={()=>setFilter("Pending")}>
+          Pending
+        </Button>
+
+        <Button color="success" sx={{ml:1}}
+          onClick={()=>setFilter("Shortlisted")}>
+          Shortlisted
+        </Button>
+
+        <Button color="error" sx={{ml:1}}
+          onClick={()=>setFilter("Rejected")}>
+          Rejected
+        </Button>
+      </Box>
+
       {/* Resume Cards */}
       {loading ? (
         <Typography variant="h6">
           Loading candidates...
         </Typography>
       ) : (
-        resumes.map(resume => (
-          <Card key={resume._id} sx={{ mb:3, borderRadius:3 }}>
-            <CardContent>
+        resumes
+          .filter(resume =>
+            filter === "All"
+              ? true
+              : (resume.status || "Pending") === filter
+          )
+          .map(resume => (
 
-              <Typography>
-                Status: <b>{resume.status || "Pending"}
-              </b>
-              </Typography>
+            <Card key={resume._id} sx={{ mb:3, borderRadius:3 }}>
+              <CardContent>
 
-              <Typography variant="h6" fontWeight="bold">
-                Resume Score: {resume.score}%
-              </Typography>
+                <Chip
+                  label={resume.status || "Pending"}
+                  color={
+                    resume.status === "Shortlisted"
+                      ? "success"
+                      : resume.status === "Rejected"
+                      ? "error"
+                      : "warning"
+                  }
+                  sx={{ mb:1 }}
+                />
 
-              <Typography variant="body2" color="text.secondary" mb={2}>
-                Uploaded on:
-                {" "}
-                {new Date(resume.createdAt).toLocaleString()}
-              </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  Resume Score: {resume.score}%
+                </Typography>
 
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                {resume.skills.map((skill,index)=>(
-                  <Chip
-                    key={index}
-                    label={skill}
-                    color="primary"
-                    variant="outlined"
-                  />
-                ))}
-              </Stack>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  mb={2}
+                >
+                  Uploaded on{" "}
+                  {new Date(resume.createdAt).toLocaleString()}
+                </Typography>
 
-              <Button
-                color="error"
-                variant="contained"
-                sx={{ mt:2 }}
-                onClick={()=>handleDelete(resume._id)}
-              >
-                Delete
-              </Button>
+                <Stack direction="row" spacing={1} flexWrap="wrap">
+                  {resume.skills.map((skill,index)=>(
+                    <Chip
+                      key={index}
+                      label={skill}
+                      color="primary"
+                      variant="outlined"
+                    />
+                  ))}
+                </Stack>
 
-              <Button
-  variant="contained"
-  color="success"
-  sx={{ mt: 2, ml: 1 }}
-  onClick={() => updateStatus(resume._id, "Shortlisted")}
->
-  Shortlist
-</Button>
+                <Button
+                  color="error"
+                  variant="contained"
+                  sx={{ mt:2 }}
+                  onClick={()=>handleDelete(resume._id)}
+                >
+                  Delete
+                </Button>
 
-<Button
-  variant="contained"
-  color="warning"
-  sx={{ mt: 2, ml: 1 }}
-  onClick={() => updateStatus(resume._id, "Rejected")}
->
-  Reject
-</Button>
+                <Button
+                  variant="contained"
+                  color="success"
+                  sx={{ mt:2, ml:1 }}
+                  onClick={()=>updateStatus(resume._id,"Shortlisted")}
+                >
+                  Shortlist
+                </Button>
 
-            </CardContent>
-          </Card>
-        ))
+                <Button
+                  variant="contained"
+                  color="warning"
+                  sx={{ mt:2, ml:1 }}
+                  onClick={()=>updateStatus(resume._id,"Rejected")}
+                >
+                  Reject
+                </Button>
+
+              </CardContent>
+            </Card>
+
+          ))
       )}
 
     </div>
