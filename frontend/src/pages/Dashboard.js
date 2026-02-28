@@ -306,6 +306,16 @@ export default function Dashboard() {
                   Reject
                 </Button>
 
+                <Button
+  variant="outlined"
+  sx={{ mt: 2, ml: 1 }}
+  onClick={() =>
+    window.location.href = `/candidate/${resume._id}`
+  }
+>
+  View Profile
+</Button>
+
               </CardContent>
             </Card>
 

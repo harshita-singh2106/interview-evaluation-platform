@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import ResumeUpload from "./pages/ResumeUpload";
+import CandidateProfile from "./pages/CandidateProfile";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/upload" element={<ResumeUpload />} />
+        <Route path="/candidate/:id" element={<CandidateProfile />} />
       </Routes>
     </BrowserRouter>
   );

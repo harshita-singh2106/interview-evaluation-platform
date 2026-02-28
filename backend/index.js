@@ -108,6 +108,12 @@ app.delete("/resumes/:id", async (req, res) => {
   }
 });
 
+// ✅ Get single candidate profile
+app.get("/resumes/:id", async (req, res) => {
+  const resume = await Resume.findById(req.params.id);
+  res.json(resume);
+});
+
 // Search resumes by skill
 app.get("/search", async (req, res) => {
   try {
