@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
@@ -7,32 +8,45 @@ const mongoose = require("mongoose");
 const fs = require("fs");
 
 const app = express();
+
+/* =========================
+   MIDDLEWARE
+========================= */
+
 app.use(cors());
 app.use(express.json());
-mongoose.connect("mongodb://127.0.0.1:27017/resumeDB")
+
+/* Show PDF inside browser (not download) */
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".pdf")) {
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline");
+      }
+    },
+  })
+);
+
+/* =========================
+   DATABASE CONNECTION
+========================= */
+
+mongoose
+  .connect("mongodb://127.0.0.1:27017/resumeDB")
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
-mongoose.connect("mongodb://127.0.0.1:27017/resumeDB")
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.log(err));
+/* =========================
+   FILE UPLOAD CONFIG
+========================= */
 
-
-// 👇 ADD HERE
-const resumeSchema = new mongoose.Schema({
-  text: String,
-  skills: [String],
-  score: Number,
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
-
-// const Resume = mongoose.model("Resume", resumeSchema);
-
-// File upload config
 const upload = multer({ dest: "uploads/" });
+
+/* =========================
+   UPLOAD RESUME + AI ANALYSIS
+========================= */
 
 app.post("/upload", upload.single("resume"), async (req, res) => {
   try {
@@ -55,25 +69,32 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
       "machine learning",
       "html",
       "css",
-      "javascript"
+      "javascript",
     ];
 
-    const detectedSkills = skillsList.filter(skill =>
+    /* Detect Skills */
+    const detectedSkills = skillsList.filter((skill) =>
       resumeText.includes(skill)
     );
 
+    /* Score Calculation */
     const score = Math.round(
       (detectedSkills.length / skillsList.length) * 100
     );
 
+    /* Missing Skills */
     const missingSkills = skillsList.filter(
-      skill => !detectedSkills.includes(skill)
-   );
+      (skill) => !detectedSkills.includes(skill)
+    );
 
-   await Resume.create({
+    /* Save Resume */
+    await Resume.create({
       text: resumeText,
       skills: detectedSkills,
-      score: score
+      score: score,
+      file: req.file.filename,
+      status: "Pending",
+      notes: "",
     });
 
     res.json({
@@ -81,14 +102,17 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
       extractedText: resumeText.substring(0, 1000),
       skills: detectedSkills,
       score: score,
-      missingSkills: missingSkills
+      missingSkills: missingSkills,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error parsing resume" });
   }
 });
+
+/* =========================
+   GET ALL RESUMES
+========================= */
 
 app.get("/resumes", async (req, res) => {
   try {
@@ -99,77 +123,69 @@ app.get("/resumes", async (req, res) => {
   }
 });
 
+/* =========================
+   GET SINGLE CANDIDATE
+========================= */
+
+app.get("/resumes/:id", async (req, res) => {
+  try {
+    const resume = await Resume.findById(req.params.id);
+    res.json(resume);
+  } catch {
+    res.status(500).json({ message: "Candidate fetch error" });
+  }
+});
+
+/* =========================
+   DELETE RESUME
+========================= */
+
 app.delete("/resumes/:id", async (req, res) => {
   try {
     await Resume.findByIdAndDelete(req.params.id);
     res.json({ message: "Resume deleted successfully" });
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Error deleting resume" });
   }
 });
 
-// ✅ Get single candidate profile
-app.get("/resumes/:id", async (req, res) => {
-  const resume = await Resume.findById(req.params.id);
-  res.json(resume);
-});
+/* =========================
+   SEARCH BY SKILL
+========================= */
 
-// Search resumes by skill
 app.get("/search", async (req, res) => {
   try {
     const skill = req.query.skill;
 
     const resumes = await Resume.find({
-      skills: { $regex: skill, $options: "i" }
+      skills: { $regex: skill, $options: "i" },
     });
 
     res.json(resumes);
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Search error" });
   }
 });
 
-// Get top candidates
+/* =========================
+   TOP CANDIDATES
+========================= */
+
 app.get("/top-candidates", async (req, res) => {
   try {
-    const resumes = await Resume
-      .find()
-      .sort({ score: -1 })   // highest score first
-      .limit(5);             // top 5 candidates
+    const resumes = await Resume.find()
+      .sort({ score: -1 })
+      .limit(5);
 
     res.json(resumes);
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Error fetching candidates" });
   }
 });
 
-// SEARCH RESUME BY SKILL
-app.get("/search", async (req, res) => {
-  try {
-    const skill = req.query.skill;
-
-    const results = await Resume.find({
-      skills: { $regex: skill, $options: "i" }
-    });
-
-    res.json(results);
-  } catch (error) {
-    res.status(500).json({ message: "Search error" });
-  }
-});
-
-// ⭐ Get Top Candidates
-app.get("/top-candidates", async (req, res) => {
-  try {
-    const candidates = await Resume.find()
-      .sort({ score: -1 })   // highest score first
-      .limit(5);             // show top 5
-
-    res.json(candidates);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching candidates" });
-  }
-});
+/* =========================
+   UPDATE STATUS
+========================= */
 
 app.put("/resumes/:id/status", async (req, res) => {
   try {
@@ -182,26 +198,14 @@ app.put("/resumes/:id/status", async (req, res) => {
     );
 
     res.json(updated);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Status update failed" });
   }
 });
 
-app.put("/resumes/status/:id", async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const updated = await Resume.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-
-    res.json(updated);
-  } catch (error) {
-    res.status(500).json({ message: "Status update failed" });
-  }
-});
+/* =========================
+   SERVER START
+========================= */
 
 app.listen(5000, () => {
   console.log("Backend running on port 5000");
