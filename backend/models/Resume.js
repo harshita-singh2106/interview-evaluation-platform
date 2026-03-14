@@ -21,8 +21,8 @@ const resumeSchema = new mongoose.Schema({
   // ✅ Upload Time
   createdAt: {
     type: Date,
-    default: Date.now,
-  },
+    default: Date.now
+  }
 });
 
 module.exports = mongoose.model("Resume", resumeSchema);

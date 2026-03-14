@@ -104,6 +104,7 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
       score: score,
       missingSkills: missingSkills,
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error parsing resume" });
@@ -118,7 +119,7 @@ app.get("/resumes", async (req, res) => {
   try {
     const resumes = await Resume.find().sort({ createdAt: -1 });
     res.json(resumes);
-  } catch (error) {
+  } catch {
     res.status(500).json({ message: "Error fetching resumes" });
   }
 });
@@ -187,7 +188,6 @@ app.get("/top-candidates", async (req, res) => {
    UPDATE STATUS
 ========================= */
 
-// Status update
 app.put("/resumes/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
@@ -199,13 +199,14 @@ app.put("/resumes/:id/status", async (req, res) => {
     );
 
     res.json(updated);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Status update failed" });
   }
 });
 
-
-// 👇 YAHAN ADD KARO (Step-2)
+/* =========================
+   UPDATE NOTES
+========================= */
 
 app.put("/resumes/:id/notes", async (req, res) => {
   try {
@@ -218,7 +219,7 @@ app.put("/resumes/:id/notes", async (req, res) => {
     );
 
     res.json(updated);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Notes update failed" });
   }
 });
