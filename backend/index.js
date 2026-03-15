@@ -188,6 +188,51 @@ app.get("/top-candidates", async (req, res) => {
   }
 });
 
+// JOB SKILL MATCHING API
+app.post("/match-skills", async (req, res) => {
+
+  try {
+
+    const { skills } = req.body;
+
+    const jobSkills = skills
+      .toLowerCase()
+      .split(",")
+      .map(skill => skill.trim());
+
+    const resumes = await Resume.find();
+
+    const results = resumes.map(candidate => {
+
+      const matched = candidate.skills.filter(skill =>
+        jobSkills.includes(skill)
+      );
+
+      const missing = jobSkills.filter(skill =>
+        !candidate.skills.includes(skill)
+      );
+
+      const matchScore = Math.round(
+        (matched.length / jobSkills.length) * 100
+      );
+
+      return {
+        candidateId: candidate._id,
+        matchedSkills: matched,
+        missingSkills: missing,
+        matchScore: matchScore
+      };
+
+    });
+
+    res.json(results);
+
+  } catch (error) {
+    res.status(500).json({ message: "Skill matching failed" });
+  }
+
+});
+
 /* =========================
    UPDATE STATUS
 ========================= */

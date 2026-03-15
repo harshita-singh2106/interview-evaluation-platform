@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [topCandidates, setTopCandidates] = useState([]);
+  const [jobSkills, setJobSkills] = useState(" ");
+  const [matches, setMatches] = useState([]);
 
   const [analytics, setAnalytics] = useState({
     total: 0,
@@ -56,6 +58,22 @@ export default function Dashboard() {
         setLoading(false);
       });
   };
+
+  const matchSkills = async () => {
+
+  const res = await fetch("http://localhost:5000/match-skills", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ skills: jobSkills })
+  });
+
+  const data = await res.json();
+
+  setMatches(data);
+
+};
 
   // ✅ Fetch Top Candidates
   const fetchTopCandidates = () => {
@@ -177,6 +195,25 @@ export default function Dashboard() {
         </Card>
       ))}
 
+      <Typography variant="h5" mt={4} mb={2}>
+  Job Skill Matching
+</Typography>
+
+<TextField
+  fullWidth
+  label="Enter Job Skills (comma separated)"
+  value={jobSkills}
+  onChange={(e) => setJobSkills(e.target.value)}
+/>
+
+<Button
+  variant="contained"
+  sx={{ mt: 2, mb: 3 }}
+  onClick={matchSkills}
+>
+  Match Candidates
+</Button>
+
       {/* Search */}
       <Typography variant="h5" mt={4} mb={2}>
         All Uploaded Resumes
@@ -225,6 +262,34 @@ export default function Dashboard() {
           Rejected
         </Button>
       </Box>
+
+      {matches.length > 0 && (
+  <Box mt={3} mb={3}>
+
+    <Typography variant="h6" mb={2}>
+      Skill Match Results
+    </Typography>
+
+    {matches.map((m, i) => (
+      <Card key={i} sx={{ p:2, mb:2 }}>
+
+        <Typography>
+          Match Score: {m.matchScore}%
+        </Typography>
+
+        <Typography>
+          Matched Skills: {m.matchedSkills.join(", ")}
+        </Typography>
+
+        <Typography>
+          Missing Skills: {m.missingSkills.join(", ")}
+        </Typography>
+
+      </Card>
+    ))}
+
+  </Box>
+)}
 
       {/* Resume Cards */}
       {loading ? (
